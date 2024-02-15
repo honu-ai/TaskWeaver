@@ -1,0 +1,91 @@
+enabled: True
+rounds:
+  - user_query: conduct analysis on my data
+    state: finished
+    post_list:
+      - message: conduct analysis on data loaded from ./data/order_out.tsv, and consult the data schema at ./data/schema.json which describes the fields, including some JSON blob fields and JSON array fields, the keys of which are provided should you need to access subfields within the JSON blobs to formulate your query or data transformation. Make sure you use the correct field names from the schema when generating pandas code.
+        send_from: Planner
+        send_to: CodeInterpreter
+        attachment_list: []
+      - message: I can understand the user request and generate syntactically correct python code to complete tasks and can utilize pre-defined plugins in the form of python functions to achieve tasks. I confirm that I will use the correct field names from the schema.json file when generating pandas code.
+        send_from: CodeInterpreter
+        send_to: Planner
+        attachment_list:
+          - type: text
+            content: I can understand the user request and generate syntactically correct python code to complete tasks and can utilize pre-defined plugins in the form of python functions to achieve tasks. I confirm that I will use the correct field names from the schema.json file when generating pandas code.
+          - type: verification
+            content: NONE
+          - type: code_error
+            content: No code is generated.
+          - type: execution_status
+            content: NONE
+          - type: execution_result
+            content: No code is executed.
+  - user_query: count how many order records I have for each customer
+    state: finished
+    post_list:
+      - message: count how many order records I have for each customer
+        send_from: Planner
+        send_to: CodeInterpreter
+        attachment_list: []
+      - message: """
+        The number of records for each unique customer email address is:
+        customer_email
+        8613683eaa3a8094a1a552d2c8c57b1e    135
+        6cd87ec3e164d01e44d1bf0d8a6df528    110
+        e943fc053bf36874b6443740220183e4     71
+        daf7dd8a7e817125b0f36db3c168abfa     66
+        74cf39e358ab96d8adce9df8d892b1fd     64
+                                           ... 
+        ebab4f96ec742889198dc0b0f909b23a      1
+        106e426475296529c197212610d90f69      1
+        2e8fe9d8f8846539f7f9f2e8f9b66382      1
+        0aa277fe6e1edbc5f70137623f69a649      1
+        d0373a260acc019c4d4e77f9978727e3      1
+        Name: count, Length: 17725, dtype: int64
+        """
+        send_from: CodeInterpreter
+        send_to: Planner
+        attachment_list:
+          - type: thought
+            content: "{ROLE_NAME} will load the data from ./data/orders_out.tsv and consult the schema file ./data/schema.json to correctly generate a code snippet to answer the question of how many orders per customer. I will use nested email address in the customer field to achieve this."
+          - type: python
+            content: |-
+              import pandas as pd
+              import json
+              
+              # Load the data
+              df = pd.read_csv('./data/order_out.tsv', sep='\t')
+              
+              df['customer'] = df['customer'].apply(lambda x: json.loads(x))
+              
+              # Extract 'email' from the 'customer' column
+              df['customer_email'] = df['customer'].apply(lambda x: x['email'])
+              
+              # Count the number of order records for each customer
+              counts = df['customer_email'].value_counts()
+              print('The number of records for each unique customer email address is:')
+              print(counts)
+          - type: verification
+            content: CORRECT
+          - type: code_error
+            content: No error is detected.
+          - type: execution_status
+            content: SUCCESS
+          - type: execution_result
+            content: """
+            The number of records for each unique customer email address is:
+            customer_email
+            8613683eaa3a8094a1a552d2c8c57b1e    135
+            6cd87ec3e164d01e44d1bf0d8a6df528    110
+            e943fc053bf36874b6443740220183e4     71
+            daf7dd8a7e817125b0f36db3c168abfa     66
+            74cf39e358ab96d8adce9df8d892b1fd     64
+                                               ... 
+            ebab4f96ec742889198dc0b0f909b23a      1
+            106e426475296529c197212610d90f69      1
+            2e8fe9d8f8846539f7f9f2e8f9b66382      1
+            0aa277fe6e1edbc5f70137623f69a649      1
+            d0373a260acc019c4d4e77f9978727e3      1
+            Name: count, Length: 17725, dtype: int64
+            """
